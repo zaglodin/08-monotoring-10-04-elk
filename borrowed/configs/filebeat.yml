@@ -13,10 +13,15 @@ processors:
       overwrite_keys: true
 
 output.logstash:
-      hosts: ["logstash:5044"]
+  hosts: ["logstash:5046"]
 
-      #output.console:
-      #enabled: true
+# output.elasticsearch:
+#   hosts: ["es-hot:9200"]
+#   indices:
+#     - index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+# output.console:
+#  enabled: true
 
 logging.json: true
 logging.metrics.enabled: false

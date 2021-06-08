@@ -10,9 +10,9 @@ services:
       - discovery.seed_hosts=es-warm
       - cluster.initial_master_nodes=es-hot,es-warm
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
-      - data01:/usr/share/elasticsearch/data:Z
+      - data01:/usr/share/elasticsearch/data
     ulimits:
       memlock:
         soft: -1
@@ -36,9 +36,9 @@ services:
       - discovery.seed_hosts=es-hot
       - cluster.initial_master_nodes=es-hot,es-warm
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
-      - data02:/usr/share/elasticsearch/data:Z
+      - data02:/usr/share/elasticsearch/data
     ulimits:
       memlock:
         soft: -1
@@ -64,15 +64,16 @@ services:
       - es-warm
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:6.3.2
+    image: docker.elastic.co/logstash/logstash:7.10.1
     container_name: logstash
     ports:
-      - 5044:5044
+      - 5046:5046
     volumes:
-      - ./configs/logstash.conf:/etc/logstash/conf.d/logstash.conf:Z
-      - ./configs/logstash.yml:/opt/logstash/config/logstash.yml:Z
+      - ./configs/logstash.conf:/usr/share/logstash/pipeline/logstash_5046.conf
+      - ./configs/logstash.yml:/opt/logstash/config/logstash.yml
     networks:
       - elastic
+      - worknet
     depends_on:
       - es-hot
       - es-warm
@@ -83,11 +84,11 @@ services:
     privileged: true
     user: root
     volumes:
-      - ./configs/filebeat.yml:/usr/share/filebeat/filebeat.yml:Z
-      - /var/lib/docker:/var/lib/docker:Z
-      - /var/run/docker.sock:/var/run/docker.sock:Z
+      - ./configs/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - /var/lib/docker:/var/lib/docker
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - elastic 
+      - worknet
     depends_on:
       - logstash
 
@@ -95,19 +96,17 @@ services:
     image: library/python:3.9-alpine
     container_name: some_app
     volumes:
-      - ./pinger/run.py:/opt/run.py:Z
+      - ./pinger/run.py:/opt/run.py
     entrypoint: python3 /opt/run.py
-    networks:
-      - elastic
 
 volumes:
   data01:
     driver: local
   data02:
     driver: local
-  data03:
-    driver: local
 
 networks:
   elastic:
+    driver: bridge
+  worknet:
     driver: bridge
